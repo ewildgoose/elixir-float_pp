@@ -39,16 +39,18 @@ FloatPP
 
   ## Examples
 
-    iex> FloatPP.to_string(12.3456, %{decimals: 3, compact: true, rounding: :half_even})
-    "12.346"
+  ```
+  iex> FloatPP.to_string(12.3456, %{decimals: 3, compact: true, rounding: :half_even})
+  "12.346"
 
-    iex> FloatPP.to_string(12.3456, %{decimals: 6, compact: false, rounding: :half_even})
-    "12.345600"
+  iex> FloatPP.to_string(12.3456, %{decimals: 6, compact: false, rounding: :half_even})
+  "12.345600"
 
-    iex> FloatPP.to_string(12.3456, %{scientific: 3, compact: true, rounding: :ceiling})
-    "1.234e+01"
+  iex> FloatPP.to_string(12.3456, %{scientific: 3, compact: true, rounding: :ceiling})
+  "1.234e+01"
 
-    iex> FloatPP.to_string(12.3456, %{decimals: nil})
-    "12.3456"
+  iex> FloatPP.to_string(12.3456, %{decimals: nil})
+  "12.3456"
+  ```
 
   """
