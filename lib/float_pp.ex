@@ -44,7 +44,7 @@ defmodule FloatPP do
     iex> FloatPP.to_string(12.3456, %{decimals: 6, compact: false, rounding: :half_even})
     "12.345600"
 
-    iex> FloatPP.to_string(12.3456, %{scientific: 3, compact: true, rounding: :ceiling})
+    iex> FloatPP.to_string(12.3456, %{scientific: 3, compact: true, rounding: :floor})
     "1.234e+01"
 
     iex> FloatPP.to_string(12.3456, %{decimals: nil})
@@ -70,14 +70,14 @@ defmodule FloatPP do
   def to_iodata(float, options \\ %{}) when is_float(float) do
     options = Map.merge(%{decimals: 20, compact: true, rounding: :half_even}, options)
 
-    positive = (float < 0)
+    positive = (float >= 0)
     {place, digits} = FloatPP.Digits.to_digits(float)
 
     digits
     |> FloatPP.Round.round(place, positive, options)
     |> stringify
     |> format_decimal(place, options)
-    |> add_negative_sign(not(positive))
+    |> add_negative_sign(positive)
   end
 
 

@@ -115,6 +115,14 @@ defmodule FloatPPTest do
     assert "-13.0", FloatPP.to_string(-12.5, options)
   end
 
+  test "cascading rounding" do
+    options = %{rounding: :ceiling, decimals: 0, compact: true}
+
+    assert 2.0 == FloatPP.to_string(1.9999, options)
+    assert 10.0 == FloatPP.to_string(9.9999, options)
+    assert 1000.0 == FloatPP.to_string(999.9999, options)
+  end
+
 
   ############################################################################
 
