@@ -47,7 +47,7 @@ defmodule FloatPP do
     iex> FloatPP.to_string(12.3456, %{scientific: 3, compact: true, rounding: :floor})
     "1.234e+01"
 
-    iex> FloatPP.to_string(12.3456, %{decimals: nil})
+    iex> FloatPP.to_string(12.3456, %{decimals: true})
     "12.3456"
   """
 
@@ -68,7 +68,9 @@ defmodule FloatPP do
   Returns an iodata list
   """
   def to_iodata(float, options \\ %{}) when is_float(float) do
-    options = Map.merge(%{decimals: 20, compact: true, rounding: :half_even}, options)
+    options = Map.merge(%{compact: false, rounding: :half_even}, options)
+    if not(Map.has_key?(options, :decimals) or Map.has_key?(options, :scientific)), do:
+      options = Map.put(options, :decimals, true)
 
     {digits, place, positive} = FloatPP.Digits.to_digits(float)
 
@@ -97,15 +99,15 @@ defmodule FloatPP do
   # optionally will pad out decimal places to given "dp" if given option
   # compact: false
   # Returns iodata list
-  def format_decimal(digits_t = {digits, place, positive}, %{scientific: dp, compact: false}) do
+  def format_decimal({digits, place, positive}, %{scientific: dp, compact: false}) when is_integer(dp) do
     [do_format_decimal({digits, 1, positive}, dp), format_exponent(place-1)]
   end
 
-  def format_decimal(digits_t = {digits, place, positive}, %{scientific: _dp}) do
+  def format_decimal({digits, place, positive}, %{scientific: _dp}) do
     [do_format_decimal({digits, 1, positive}, 0), format_exponent(place-1)]
   end
 
-  def format_decimal(digits_t, %{decimals: dp, compact: false}) do
+  def format_decimal(digits_t, %{decimals: dp, compact: false}) when is_integer(dp) do
     do_format_decimal(digits_t, dp)
   end
 

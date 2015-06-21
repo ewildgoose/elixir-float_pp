@@ -53,9 +53,9 @@ defmodule FloatPP.Round do
   """
   def round(digits_t, options)
 
-  # Passing 'nil' for decimal places avoids rounding and uses whatever is necessary
-  def round(digits_t, %{scientific: nil}), do: digits_t
-  def round(digits_t, %{decimals: nil}), do: digits_t
+  # Passing true for decimal places avoids rounding and uses whatever is necessary
+  def round(digits_t, %{scientific: true}), do: digits_t
+  def round(digits_t, %{decimals: true}), do: digits_t
 
   # rounded away all the decimals... return 0
   def round(_, %{scientific: dp}) when dp <= 0,

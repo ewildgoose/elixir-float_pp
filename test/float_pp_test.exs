@@ -142,25 +142,25 @@ defmodule FloatPPTest do
   test "test to_digits(small denormalized number)" do
     # 4.94065645841246544177e-324
     <<small_denorm::float>> = <<0,0,0,0,0,0,0,1>>
-    assert "4.9406564584124654e-324" == FloatPP.to_string(small_denorm, %{scientific: nil, compact: true})
+    assert "4.9406564584124654e-324" == FloatPP.to_string(small_denorm, %{scientific: true, compact: true})
   end
 
   test "test to_digits(large denormalized number)" do
     # 2.22507385850720088902e-308
     <<large_denorm::float>> = <<0,15,255,255,255,255,255,255>>
-    assert "2.225073858507201e-308" == FloatPP.to_string(large_denorm, %{scientific: nil, compact: true})
+    assert "2.225073858507201e-308" == FloatPP.to_string(large_denorm, %{scientific: true, compact: true})
   end
 
   test "test to_digits(small normalized number)" do
     # 2.22507385850720138309e-308
     <<small_norm::float>> = <<0,16,0,0,0,0,0,0>>
-    assert "2.2250738585072014e-308" == FloatPP.to_string(small_norm, %{scientific: nil, compact: true})
+    assert "2.2250738585072014e-308" == FloatPP.to_string(small_norm, %{scientific: true, compact: true})
   end
 
   test "test to_digits(large normalized number)" do
     # 1.79769313486231570815e+308
     <<large_norm::float>> = <<127,239,255,255,255,255,255,255>>
-    assert "1.7976931348623157e+308" == FloatPP.to_string(large_norm, %{scientific: nil, compact: true})
+    assert "1.7976931348623157e+308" == FloatPP.to_string(large_norm, %{scientific: true, compact: true})
   end
 
 
