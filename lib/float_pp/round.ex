@@ -48,64 +48,87 @@ defmodule FloatPP.Round do
   - if the tie break digit is 5, whether there are further non zero digits
 
   The various rounding rules are based on IEEE 754 and documented in the moduledoc
+
+  Takes input digits_t = {digits, place, positive}
   """
-  def round(digits, place, positive, options)
+  def round(digits_t, options)
 
   # Passing 'nil' for decimal places avoids rounding and uses whatever is necessary
-  def round(digits, _, _, %{scientific: nil}), do: digits
-  def round(digits, _, _, %{decimals: nil}), do: digits
+  def round(digits_t, %{scientific: nil}), do: digits_t
+  def round(digits_t, %{decimals: nil}), do: digits_t
+
+  # rounded away all the decimals... return 0
+  def round(_, %{scientific: dp}) when dp <= 0,
+    do: {[0], 1, true}
+  def round({_, place, _}, %{decimals: dp}) when dp + place <= 0,
+    do: {[0], 1, true}
 
   # scientific/decimal rounding are the same, we are just varying which
   # digit we start counting from to find our rounding point
-  def round(_, _place, _, %{scientific: dp}) when dp <= 0,
-    do: [0]
-  def round(digits, _place, positive, options = %{scientific: dp}),
-    do: tiebreak(digits, dp, positive, options)
+  def round(digits_t, options = %{scientific: dp}),
+    do: do_round(digits_t, dp, options)
 
-  def round(_, place, _, %{decimals: dp}) when dp + place <= 0,
-    do: [0]
-  def round(digits, place, positive, options = %{decimals: dp}),
-    do: tiebreak(digits, dp + place - 1, positive, options)
+  def round(digits_t = {_, place, _}, options = %{decimals: dp}),
+    do: do_round(digits_t, dp + place - 1, options)
 
 
-  defp tiebreak(digits, place, positive, %{rounding: rounding}) do
-    case Enum.split(digits, place) do
-      {l, [least_sig | [tie | rest]]} -> [l, do_tiebreak(positive, least_sig, tie, rest, rounding)]
-      {l, [least_sig | []]}           -> [l, least_sig]
-      {l, []}                         -> l
-    end
+  defp do_round({digits, place, positive}, round_at, %{rounding: rounding}) do
+      case Enum.split(digits, round_at) do
+        {l, [least_sig | [tie | rest]]} ->
+          case do_incr(l, least_sig, increment?(positive, least_sig, tie, rest, rounding)) do
+            [:rollover | digits] -> {digits, place + 1, positive}
+            digits               -> {digits, place, positive}
+          end
+        {l, [least_sig | []]}           -> {[l, least_sig], place, positive}
+        {l, []}                         -> {l, place, positive}
+      end
   end
 
+  defp do_incr(l, least_sig, false), do: [l, least_sig]
+  defp do_incr(l, least_sig, true) when least_sig < 9, do: [l, least_sig + 1]
+  # else need to cascade the increment
+  defp do_incr(l, 9, true) do
+    l
+    |> Enum.reverse
+    |> cascade_incr
+    |> Enum.reverse([0])
+  end
 
-  @spec do_tiebreak(boolean, non_neg_integer | nil, non_neg_integer | nil, list, FloatPP.rounding) :: non_neg_integer
-  defp do_tiebreak(positive, least_sig, tie, rest, round)
+  # cascade an increment of decimal digits which could be rolling over 9 -> 0
+  defp cascade_incr([9 | rest]), do: [0 | cascade_incr(rest)]
+  defp cascade_incr([d | rest]), do: [d+1 | rest]
+  defp cascade_incr([]), do: [1, :rollover]
+
+
+  @spec increment?(boolean, non_neg_integer | nil, non_neg_integer | nil, list, FloatPP.rounding) :: non_neg_integer
+  defp increment?(positive, least_sig, tie, rest, round)
 
   # Directed rounding towards 0 (truncate)
-  defp do_tiebreak(_, ls, _tie, _, :down), do: ls
+  defp increment?(_, _ls, _tie, _, :down), do: false
   # Directed rounding away from 0 (non IEEE option)
-  defp do_tiebreak(_, ls, nil, _, :up), do: ls
-  defp do_tiebreak(_, ls, _tie, _, :up), do: ls + 1
+  defp increment?(_, _ls, nil, _, :up), do: false
+  defp increment?(_, _ls, _tie, _, :up), do: true
 
   # Directed rounding towards +∞ (rounding up / ceiling)
-  defp do_tiebreak(true, ls, tie, _, :ceiling) when tie != nil, do: ls + 1
-  defp do_tiebreak(_, ls, _tie, _, :ceiling), do: ls
+  defp increment?(true, _ls, tie, _, :ceiling) when tie != nil, do: true
+  defp increment?(_, _ls, _tie, _, :ceiling), do: false
 
   # Directed rounding towards -∞ (rounding down / floor)
-  defp do_tiebreak(false, ls, tie, _, :floor) when tie != nil, do: ls + 1
-  defp do_tiebreak(_, ls, _tie, _, :floor), do: ls
+  defp increment?(false, _ls, tie, _, :floor) when tie != nil, do: true
+  defp increment?(_, _ls, _tie, _, :floor), do: false
 
   # Round to nearest - tiebreaks by rounding to even
   # Default IEEE rounding, recommended default for decimal
-  defp do_tiebreak(_, ls, 5, [], :half_even) when Integer.is_even(ls), do: ls
-  defp do_tiebreak(_, ls, tie, _rest, :half_even) when tie >= 5, do: ls + 1
-  defp do_tiebreak(_, ls, _tie, _rest, :half_even), do: ls
+  defp increment?(_, ls, 5, [], :half_even) when Integer.is_even(ls), do: false
+  defp increment?(_, _ls, tie, _rest, :half_even) when tie >= 5, do: true
+  defp increment?(_, _ls, _tie, _rest, :half_even), do: false
 
   # Round to nearest - tiebreaks by rounding away from zero (same as Elixir Kernel.round)
-  defp do_tiebreak(_, ls, tie, _rest, :half_up) when tie >= 5, do: ls + 1
-  defp do_tiebreak(_, ls, _tie, _rest, :half_up), do: ls
+  defp increment?(_, _ls, tie, _rest, :half_up) when tie >= 5, do: true
+  defp increment?(_, _ls, _tie, _rest, :half_up), do: false
 
   # Round to nearest - tiebreaks by rounding towards zero (non IEEE option)
-  defp do_tiebreak(_, ls, 5, [], :half_down), do: ls
-  defp do_tiebreak(_, ls, tie, _rest, :half_down) when tie >= 5, do: ls + 1
-  defp do_tiebreak(_, ls, _tie, _rest, :half_down), do: ls
+  defp increment?(_, _ls, 5, [], :half_down), do: false
+  defp increment?(_, _ls, tie, _rest, :half_down) when tie >= 5, do: true
+  defp increment?(_, _ls, _tie, _rest, :half_down), do: false
 end

@@ -3,39 +3,39 @@ defmodule FloatPP.DigitsTest do
 
 
   test "test to_digits(zero)" do
-    assert {1, [0]} == FloatPP.Digits.to_digits(0.0)
+    assert {[0], 1, true} == FloatPP.Digits.to_digits(0.0)
   end
 
   test "test to_digits(one)" do
-    assert {1, [1]} == FloatPP.Digits.to_digits(1.0)
+    assert {[1], 1, true} == FloatPP.Digits.to_digits(1.0)
   end
 
   test "test to_digits(negative one)" do
-    assert {1, [1]} == FloatPP.Digits.to_digits(-1.0)
+    assert {[1], 1, false} == FloatPP.Digits.to_digits(-1.0)
   end
 
   test "test to_digits(small denormalized number)" do
     # 4.94065645841246544177e-324
     <<small_denorm::float>> = <<0,0,0,0,0,0,0,1>>
-    assert {-323, [4, 9, 4, 0, 6, 5, 6, 4, 5, 8, 4, 1, 2, 4, 6, 5, 4]} == FloatPP.Digits.to_digits(small_denorm)
+    assert {[4, 9, 4, 0, 6, 5, 6, 4, 5, 8, 4, 1, 2, 4, 6, 5, 4], -323, true} == FloatPP.Digits.to_digits(small_denorm)
   end
 
   test "test to_digits(large denormalized number)" do
     # 2.22507385850720088902e-308
     <<large_denorm::float>> = <<0,15,255,255,255,255,255,255>>
-    assert {-307, [2, 2, 2, 5, 0, 7, 3, 8, 5, 8, 5, 0, 7, 2, 0, 1]} == FloatPP.Digits.to_digits(large_denorm)
+    assert {[2, 2, 2, 5, 0, 7, 3, 8, 5, 8, 5, 0, 7, 2, 0, 1], -307, true} == FloatPP.Digits.to_digits(large_denorm)
   end
 
   test "test to_digits(small normalized number)" do
     # 2.22507385850720138309e-308
     <<small_norm::float>> = <<0,16,0,0,0,0,0,0>>
-    assert {-307, [2, 2, 2, 5, 0, 7, 3, 8, 5, 8, 5, 0, 7, 2, 0, 1, 4]} == FloatPP.Digits.to_digits(small_norm)
+    assert {[2, 2, 2, 5, 0, 7, 3, 8, 5, 8, 5, 0, 7, 2, 0, 1, 4], -307, true} == FloatPP.Digits.to_digits(small_norm)
   end
 
   test "test to_digits(large normalized number)" do
     # 1.79769313486231570815e+308
     <<large_norm::float>> = <<127,239,255,255,255,255,255,255>>
-    assert {309, [1, 7, 9, 7, 6, 9, 3, 1, 3, 4, 8, 6, 2, 3, 1, 5, 7]} == FloatPP.Digits.to_digits(large_norm)
+    assert {[1, 7, 9, 7, 6, 9, 3, 1, 3, 4, 8, 6, 2, 3, 1, 5, 7], 309, true} == FloatPP.Digits.to_digits(large_norm)
   end
 
 

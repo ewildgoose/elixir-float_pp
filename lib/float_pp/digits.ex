@@ -18,12 +18,12 @@ defmodule FloatPP.Digits do
 
   @doc """
   Computes a iodata list of the digits of the given IEEE 754 floating point number,
-  together with the location of the decimal point as {place, digits}
+  together with the location of the decimal point as {digits, place, positive}
 
   A "compact" representation is returned, so there may be fewer digits returned
   than the decimal point location
   """
-  def to_digits(0.0), do: {1, [0]}
+  def to_digits(0.0), do: {[0], 1, true}
   def to_digits(float) do
     # Find mantissa and exponent from IEEE-754 packed notation
     {frac, exp} = frexp(float)
@@ -71,20 +71,20 @@ defmodule FloatPP.Digits do
     # TODO: Benchmark removing the log10 and using the approximation given in original paper?
     est = trunc(Float.ceil(:math.log10(abs(float)) - 1.0e-10))
     if est >= 0 do
-      fixup(r, s * power_of_10(est), m_plus, m_minus, est, low_ok, high_ok)
+      fixup(r, s * power_of_10(est), m_plus, m_minus, est, low_ok, high_ok, float)
     else
       scale = power_of_10(-est)
-      fixup(r * scale, s, m_plus * scale, m_minus * scale, est, low_ok, high_ok)
+      fixup(r * scale, s, m_plus * scale, m_minus * scale, est, low_ok, high_ok, float)
     end
   end
 
-  def fixup(r, s, m_plus, m_minus, k, low_ok, high_ok) do
+  def fixup(r, s, m_plus, m_minus, k, low_ok, high_ok, float) do
     too_low = if high_ok, do: (r + m_plus) >= s, else: (r + m_plus) > s
 
     if too_low do
-      {(k + 1), generate(r, s, m_plus, m_minus, low_ok, high_ok)}
+      {generate(r, s, m_plus, m_minus, low_ok, high_ok), (k + 1), (float >= 0)}
     else
-      {k, generate(r * 10, s, m_plus * 10, m_minus * 10, low_ok, high_ok)}
+      {generate(r * 10, s, m_plus * 10, m_minus * 10, low_ok, high_ok), k, (float >= 0)}
     end
   end
 

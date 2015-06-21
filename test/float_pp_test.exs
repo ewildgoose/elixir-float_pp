@@ -118,9 +118,9 @@ defmodule FloatPPTest do
   test "cascading rounding" do
     options = %{rounding: :ceiling, decimals: 0, compact: true}
 
-    assert 2.0 == FloatPP.to_string(1.9999, options)
-    assert 10.0 == FloatPP.to_string(9.9999, options)
-    assert 1000.0 == FloatPP.to_string(999.9999, options)
+    assert "2.0" == FloatPP.to_string(1.9999, options)
+    assert "10.0" == FloatPP.to_string(9.9999, options)
+    assert "1000.0" == FloatPP.to_string(999.9999, options)
   end
 
 
@@ -169,36 +169,36 @@ defmodule FloatPPTest do
 
   test "test format_decimal scientific" do
     assert  "7.00000000000000000000e+00" =
-            FloatPP.format_decimal(["7"], 1, %{scientific: 20, compact: false}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], 1, true}, %{scientific: 20, compact: false}) |> IO.iodata_to_binary
 
     assert  "7.0e+00" =
-            FloatPP.format_decimal(["7"], 1, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], 1, true}, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
 
     assert  "7.0e+01" =
-            FloatPP.format_decimal(["7"], 2, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], 2, true}, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
 
     assert  "7.0e-02" =
-            FloatPP.format_decimal(["7"], -1, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], -1, true}, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
 
     assert  "7.0e-10" =
-            FloatPP.format_decimal(["7"], -9, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], -9, true}, %{scientific: 20, compact: true}) |> IO.iodata_to_binary
   end
 
   test "test format_decimal decimal" do
     assert  "7.00000000000000000000" =
-            FloatPP.format_decimal(["7"], 1, %{decimals: 20, compact: false}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], 1, true}, %{decimals: 20, compact: false}) |> IO.iodata_to_binary
 
     assert  "7.0" =
-            FloatPP.format_decimal(["7"], 1, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], 1, true}, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
 
     assert  "70.0" =
-            FloatPP.format_decimal(["7"], 2, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], 2, true}, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
 
     assert  "0.07" =
-            FloatPP.format_decimal(["7"], -1, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], -1, true}, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
 
     assert  "0.0000000007" =
-            FloatPP.format_decimal(["7"], -9, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
+            FloatPP.format_decimal({["7"], -9, true}, %{decimals: 20, compact: true}) |> IO.iodata_to_binary
   end
 
 

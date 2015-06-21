@@ -70,22 +70,21 @@ defmodule FloatPP do
   def to_iodata(float, options \\ %{}) when is_float(float) do
     options = Map.merge(%{decimals: 20, compact: true, rounding: :half_even}, options)
 
-    positive = (float >= 0)
-    {place, digits} = FloatPP.Digits.to_digits(float)
+    {digits, place, positive} = FloatPP.Digits.to_digits(float)
 
-    digits
-    |> FloatPP.Round.round(place, positive, options)
+    {digits, place, positive}
+    |> FloatPP.Round.round(options)
     |> stringify
-    |> format_decimal(place, options)
-    |> add_negative_sign(positive)
+    |> format_decimal(options)
   end
 
 
   # Take our list of integers and convert to a list of strings
-  defp stringify(digits) do
-    digits
-    |> List.flatten
-    |> Enum.map(&Integer.to_string/1)
+  defp stringify({digits, place, positive}) do
+    digit_string = digits
+                    |> List.flatten
+                    |> Enum.map(&Integer.to_string/1)
+    {digit_string, place, positive}
   end
 
 
@@ -97,20 +96,21 @@ defmodule FloatPP do
   # format as a decimal number, either: decimal, or scientific notation
   # optionally will pad out decimal places to given "dp" if given option
   # compact: false
-  def format_decimal(digits, place, %{scientific: dp, compact: false}) do
-    [do_format_decimal(digits, 1, dp), format_exponent(place-1)]
+  # Returns iodata list
+  def format_decimal(digits_t = {digits, place, positive}, %{scientific: dp, compact: false}) do
+    [do_format_decimal({digits, 1, positive}, dp), format_exponent(place-1)]
   end
 
-  def format_decimal(digits, place, %{scientific: _dp}) do
-    [do_format_decimal(digits, 1, 0), format_exponent(place-1)]
+  def format_decimal(digits_t = {digits, place, positive}, %{scientific: _dp}) do
+    [do_format_decimal({digits, 1, positive}, 0), format_exponent(place-1)]
   end
 
-  def format_decimal(digits, place, %{decimals: dp, compact: false}) do
-    do_format_decimal(digits, place, dp)
+  def format_decimal(digits_t, %{decimals: dp, compact: false}) do
+    do_format_decimal(digits_t, dp)
   end
 
-  def format_decimal(digits, place, _options) do
-    do_format_decimal(digits, place, 0)
+  def format_decimal(digits_t, _options) do
+    do_format_decimal(digits_t, 0)
   end
 
 
@@ -119,7 +119,7 @@ defmodule FloatPP do
   # NOTE: We assume rounding already performed, ie input has correct max decimal places
   #
   # FIXME: Need internationalisation of the decimal symbol
-  defp do_format_decimal(digits, place, decimals) do
+  defp do_format_decimal({digits, place, positive}, decimals) do
     decimal_sym = "."
     digit_count = Enum.count(digits)
 
@@ -137,6 +137,7 @@ defmodule FloatPP do
     # Split the digits and place the decimal in the correct place
     {l, r} = Enum.split(digits, place)
     [l, decimal_sym, r]
+    |> add_negative_sign(positive)
   end
 
 
