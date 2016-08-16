@@ -69,8 +69,12 @@ defmodule FloatPP do
   """
   def to_iodata(float, options \\ %{}) when is_float(float) do
     options = Map.merge(%{compact: false, rounding: :half_even}, options)
-    if not(Map.has_key?(options, :decimals) or Map.has_key?(options, :scientific)), do:
-      options = Map.put(options, :decimals, true)
+    
+    options = if not(Map.has_key?(options, :decimals) or Map.has_key?(options, :scientific)) do 
+                Map.put(options, :decimals, true)
+              else
+                options
+              end
 
     {digits, place, positive} = FloatPP.Digits.to_digits(float)
 
@@ -84,8 +88,9 @@ defmodule FloatPP do
   # Take our list of integers and convert to a list of strings
   defp stringify({digits, place, positive}) do
     digit_string = digits
-                    |> List.flatten
-                    |> Enum.map(&Integer.to_string/1)
+    |> List.flatten
+    |> Enum.map(&Integer.to_string/1)
+    
     {digit_string, place, positive}
   end
 
@@ -126,15 +131,18 @@ defmodule FloatPP do
     digit_count = Enum.count(digits)
 
     needed = place + max(1, decimals)
-    if digit_count < needed do
-      digits = digits ++ List.duplicate("0", needed - digit_count)
-    end
+    digits =  if digit_count < needed do
+                digits ++ List.duplicate("0", needed - digit_count)
+              else
+                digits
+              end
 
     # Ensure we have enough zeros on each end to place the "."
-    if place <= 0 do
-      digits = List.duplicate("0", 1 - place) ++ digits
-      place = 1
-    end
+    {digits, place} = if place <= 0 do
+                        {List.duplicate("0", 1 - place) ++ digits, 1}
+                      else
+                        {digits, place}
+                      end
 
     # Split the digits and place the decimal in the correct place
     {l, r} = Enum.split(digits, place)
@@ -143,7 +151,7 @@ defmodule FloatPP do
   end
 
 
-  @doc """
+  @docp """
   Format an exponent in float point format
 
     iex> format_exponent(4)
