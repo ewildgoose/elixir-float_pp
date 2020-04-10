@@ -60,17 +60,20 @@ defmodule FloatPP.Round do
   # rounded away all the decimals... return 0
   def round(_, %{scientific: dp}) when dp <= 0,
     do: {[0], 1, true}
-  def round({_, place, _}, %{decimals: dp}) when dp + place <= 0,
+
+  def round({_, place, _}, %{decimals: dp}) when dp + place <= 0 and place < 0,
     do: {[0], 1, true}
 
   # scientific/decimal rounding are the same, we are just varying which
   # digit we start counting from to find our rounding point
+  def round({_, place, _} = digits_t, %{decimals: dp} = options) when dp + place <= 0,
+    do: do_round(digits_t, dp, options)
+
   def round(digits_t, options = %{scientific: dp}),
     do: do_round(digits_t, dp, options)
 
   def round(digits_t = {_, place, _}, options = %{decimals: dp}),
     do: do_round(digits_t, dp + place - 1, options)
-
 
   defp do_round({digits, place, positive}, round_at, %{rounding: rounding}) do
       case Enum.split(digits, round_at) do
@@ -79,8 +82,13 @@ defmodule FloatPP.Round do
             [:rollover | digits] -> {digits, place + 1, positive}
             digits               -> {digits, place, positive}
           end
-        {l, [least_sig | []]}           -> {[l, least_sig], place, positive}
-        {l, []}                         -> {l, place, positive}
+        {[] = l, [least_sig | []]} ->
+          case do_incr(l, least_sig, increment?(positive, least_sig, 0, [], rounding)) do
+            [:rollover | digits] -> {digits, place + 1, positive}
+            digits               -> {digits, place, positive}
+          end
+        {l, [least_sig | []]}    -> {[l, least_sig], place, positive}
+        {l, []}                  -> {l, place, positive}
       end
   end
 
@@ -100,7 +108,7 @@ defmodule FloatPP.Round do
   defp cascade_incr([]), do: [1, :rollover]
 
 
-  @spec increment?(boolean, non_neg_integer | nil, non_neg_integer | nil, list, FloatPP.rounding) :: non_neg_integer
+  @spec increment?(boolean, non_neg_integer | nil, non_neg_integer | nil, list, FloatPP.rounding) :: boolean
   defp increment?(positive, least_sig, tie, rest, round)
 
   # Directed rounding towards 0 (truncate)

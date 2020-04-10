@@ -69,8 +69,8 @@ defmodule FloatPP do
   """
   def to_iodata(float, options \\ %{}) when is_float(float) do
     options = Map.merge(%{compact: false, rounding: :half_even}, options)
-    
-    options = if not(Map.has_key?(options, :decimals) or Map.has_key?(options, :scientific)) do 
+
+    options = if not(Map.has_key?(options, :decimals) or Map.has_key?(options, :scientific)) do
                 Map.put(options, :decimals, true)
               else
                 options
@@ -90,7 +90,7 @@ defmodule FloatPP do
     digit_string = digits
     |> List.flatten
     |> Enum.map(&Integer.to_string/1)
-    
+
     {digit_string, place, positive}
   end
 
@@ -151,7 +151,7 @@ defmodule FloatPP do
   end
 
 
-  @docp """
+  _ = """
   Format an exponent in float point format
 
     iex> format_exponent(4)

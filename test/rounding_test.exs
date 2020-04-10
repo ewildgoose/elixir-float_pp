@@ -69,4 +69,12 @@ defmodule RoundingTest do
     assert -1.21 == floor(-1.206, 2)
   end
 
+  test "round with 0 decimals of a number between 0 and one" do
+    assert 1.0 == round(0.959999999999809, 0)
+  end
+
+  test "rounding to less than the precision of the number returns 0" do
+    assert 0.0 = round(1.235e-4, 3, :half_even)
+  end
+
 end
