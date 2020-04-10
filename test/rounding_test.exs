@@ -4,7 +4,7 @@ defmodule RoundingTest do
   def round(number, precision \\ 0, rounding \\ :half_up) do
     number
     |> FloatPP.to_string(%{compact: false, decimals: precision, rounding: rounding})
-    |> String.to_float
+    |> String.to_float()
   end
 
   def ceil(number, precision \\ 0) do
@@ -76,5 +76,4 @@ defmodule RoundingTest do
   test "rounding to less than the precision of the number returns 0" do
     assert 0.0 = round(1.235e-4, 3, :half_even)
   end
-
 end

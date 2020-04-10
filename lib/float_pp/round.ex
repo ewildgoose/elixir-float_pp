@@ -26,14 +26,14 @@ defmodule FloatPP.Round do
   """
   require Integer
 
-  @type rounding :: :down |
-                    :half_up |
-                    :half_even |
-                    :ceiling |
-                    :floor |
-                    :half_down |
-                    :up
-
+  @type rounding ::
+          :down
+          | :half_up
+          | :half_even
+          | :ceiling
+          | :floor
+          | :half_down
+          | :up
 
   @doc """
   Round a digit using a specified rounding.
@@ -76,20 +76,25 @@ defmodule FloatPP.Round do
     do: do_round(digits_t, dp + place - 1, options)
 
   defp do_round({digits, place, positive}, round_at, %{rounding: rounding}) do
-      case Enum.split(digits, round_at) do
-        {l, [least_sig | [tie | rest]]} ->
-          case do_incr(l, least_sig, increment?(positive, least_sig, tie, rest, rounding)) do
-            [:rollover | digits] -> {digits, place + 1, positive}
-            digits               -> {digits, place, positive}
-          end
-        {[] = l, [least_sig | []]} ->
-          case do_incr(l, least_sig, increment?(positive, least_sig, 0, [], rounding)) do
-            [:rollover | digits] -> {digits, place + 1, positive}
-            digits               -> {digits, place, positive}
-          end
-        {l, [least_sig | []]}    -> {[l, least_sig], place, positive}
-        {l, []}                  -> {l, place, positive}
-      end
+    case Enum.split(digits, round_at) do
+      {l, [least_sig | [tie | rest]]} ->
+        case do_incr(l, least_sig, increment?(positive, least_sig, tie, rest, rounding)) do
+          [:rollover | digits] -> {digits, place + 1, positive}
+          digits -> {digits, place, positive}
+        end
+
+      {[] = l, [least_sig | []]} ->
+        case do_incr(l, least_sig, increment?(positive, least_sig, 0, [], rounding)) do
+          [:rollover | digits] -> {digits, place + 1, positive}
+          digits -> {digits, place, positive}
+        end
+
+      {l, [least_sig | []]} ->
+        {[l, least_sig], place, positive}
+
+      {l, []} ->
+        {l, place, positive}
+    end
   end
 
   defp do_incr(l, least_sig, false), do: [l, least_sig]
@@ -97,18 +102,23 @@ defmodule FloatPP.Round do
   # else need to cascade the increment
   defp do_incr(l, 9, true) do
     l
-    |> Enum.reverse
+    |> Enum.reverse()
     |> cascade_incr
     |> Enum.reverse([0])
   end
 
   # cascade an increment of decimal digits which could be rolling over 9 -> 0
   defp cascade_incr([9 | rest]), do: [0 | cascade_incr(rest)]
-  defp cascade_incr([d | rest]), do: [d+1 | rest]
+  defp cascade_incr([d | rest]), do: [d + 1 | rest]
   defp cascade_incr([]), do: [1, :rollover]
 
-
-  @spec increment?(boolean, non_neg_integer | nil, non_neg_integer | nil, list, FloatPP.rounding) :: boolean
+  @spec increment?(
+          boolean,
+          non_neg_integer | nil,
+          non_neg_integer | nil,
+          list,
+          FloatPP.rounding()
+        ) :: boolean
   defp increment?(positive, least_sig, tie, rest, round)
 
   # Directed rounding towards 0 (truncate)
