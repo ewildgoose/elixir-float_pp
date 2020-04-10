@@ -10,11 +10,10 @@ defmodule FloatPP.Digits do
   use Bitwise
   require Integer
 
-  @two52 bsl 1, 52
-  @two53 bsl 1, 53
+  @two52 bsl(1, 52)
+  @two53 bsl(1, 53)
   @float_bias 1022
   @min_e -1074
-
 
   @doc """
   Computes a iodata list of the digits of the given IEEE 754 floating point number,
@@ -24,6 +23,7 @@ defmodule FloatPP.Digits do
   than the decimal point location
   """
   def to_digits(0.0), do: {[0], 1, true}
+
   def to_digits(float) do
     # Find mantissa and exponent from IEEE-754 packed notation
     {frac, exp} = frexp(float)
@@ -36,12 +36,10 @@ defmodule FloatPP.Digits do
     flonum(float, frac, exp)
   end
 
-
   ############################################################################
   # The following functions are Elixir translations of the original paper:
   # "Printing Floating-Point Numbers Quickly and Accurately"
   # See the paper for further explanation
-
 
   @doc """
   Set initial values {r, s, m+, m-}
@@ -51,18 +49,20 @@ defmodule FloatPP.Digits do
   """
   def flonum(float, frac, exp) do
     round = Integer.is_even(frac)
+
     if exp >= 0 do
       b_exp = bsl(1, exp)
+
       if frac !== @two52 do
-        scale((frac * b_exp * 2), 2, b_exp, b_exp, round, round, float)
+        scale(frac * b_exp * 2, 2, b_exp, b_exp, round, round, float)
       else
-        scale((frac * b_exp * 4), 4, (b_exp * 2), b_exp, round, round, float)
+        scale(frac * b_exp * 4, 4, b_exp * 2, b_exp, round, round, float)
       end
     else
-      if (exp === @min_e) or (frac !== @two52) do
-        scale((frac * 2), bsl(1, (1 - exp)), 1, 1, round, round, float)
+      if exp === @min_e or frac !== @two52 do
+        scale(frac * 2, bsl(1, 1 - exp), 1, 1, round, round, float)
       else
-        scale((frac * 4), bsl(1, (2 - exp)), 2, 1, round, round, float)
+        scale(frac * 4, bsl(1, 2 - exp), 2, 1, round, round, float)
       end
     end
   end
@@ -70,6 +70,7 @@ defmodule FloatPP.Digits do
   def scale(r, s, m_plus, m_minus, low_ok, high_ok, float) do
     # TODO: Benchmark removing the log10 and using the approximation given in original paper?
     est = trunc(Float.ceil(:math.log10(abs(float)) - 1.0e-10))
+
     if est >= 0 do
       fixup(r, s * power_of_10(est), m_plus, m_minus, est, low_ok, high_ok, float)
     else
@@ -79,30 +80,30 @@ defmodule FloatPP.Digits do
   end
 
   def fixup(r, s, m_plus, m_minus, k, low_ok, high_ok, float) do
-    too_low = if high_ok, do: (r + m_plus) >= s, else: (r + m_plus) > s
+    too_low = if high_ok, do: r + m_plus >= s, else: r + m_plus > s
 
     if too_low do
-      {generate(r, s, m_plus, m_minus, low_ok, high_ok), (k + 1), (float >= 0)}
+      {generate(r, s, m_plus, m_minus, low_ok, high_ok), k + 1, float >= 0}
     else
-      {generate(r * 10, s, m_plus * 10, m_minus * 10, low_ok, high_ok), k, (float >= 0)}
+      {generate(r * 10, s, m_plus * 10, m_minus * 10, low_ok, high_ok), k, float >= 0}
     end
   end
 
   defp generate(r, s, m_plus, m_minus, low_ok, high_ok) do
-    d = div r, s
-    r = rem r, s
+    d = div(r, s)
+    r = rem(r, s)
 
-    tc1 = if low_ok,  do: r <= m_minus,       else: r < m_minus
-    tc2 = if high_ok, do: (r + m_plus) >= s,  else: (r + m_plus) > s
+    tc1 = if low_ok, do: r <= m_minus, else: r < m_minus
+    tc2 = if high_ok, do: r + m_plus >= s, else: r + m_plus > s
 
-    if not(tc1) do
-      if not(tc2) do
+    if not tc1 do
+      if not tc2 do
         [d | generate(r * 10, s, m_plus * 10, m_minus * 10, low_ok, high_ok)]
       else
         [d + 1]
       end
     else
-      if not(tc2) do
+      if not tc2 do
         [d]
       else
         if r * 2 < s do
@@ -113,7 +114,6 @@ defmodule FloatPP.Digits do
       end
     end
   end
-
 
   ############################################################################
   # Utility functions
@@ -130,25 +130,26 @@ defmodule FloatPP.Digits do
   Elixir, but beware future-self reading this...
   """
   def frexp(value) do
-    << sign::1, exp::11, frac::52 >> = << value::float >>
+    <<sign::1, exp::11, frac::52>> = <<value::float>>
     frexp(sign, frac, exp)
   end
 
   defp frexp(_Sign, 0, 0) do
     {0.0, 0}
   end
+
   # Handle denormalised values
   defp frexp(sign, frac, 0) do
     exp = bitwise_length(frac)
-    <<f::float>> = <<sign::1, @float_bias::11, (frac-1)::52>>
-    {f, -(@float_bias) - 52 + exp}
+    <<f::float>> = <<sign::1, @float_bias::11, frac - 1::52>>
+    {f, -@float_bias - 52 + exp}
   end
+
   # Handle normalised values
   defp frexp(sign, frac, exp) do
     <<f::float>> = <<sign::1, @float_bias::11, frac::52>>
     {f, exp - @float_bias}
   end
-
 
   @doc """
   Return the number of significant bits needed to store the given number
@@ -158,14 +159,12 @@ defmodule FloatPP.Digits do
   end
 
   defp bitwise_length(0, n), do: n
-  defp bitwise_length(value, n), do: bitwise_length(bsr(value, 1), n+1)
-
+  defp bitwise_length(value, n), do: bitwise_length(bsr(value, 1), n + 1)
 
   # Precompute powers of 10 up to 10^326
   # FIXME: duplicating existing function in Float, which only goes up to 15.
-  Enum.reduce 0..326, 1, fn x, acc ->
+  Enum.reduce(0..326, 1, fn x, acc ->
     defp power_of_10(unquote(x)), do: unquote(acc)
     acc * 10
-  end
-
+  end)
 end
